@@ -5,7 +5,7 @@ class CQuerySet(object):
 
 	def __init__(self, doc_cls, collection):
 		self._doc_cls = doc_cls           #文档cls
-		self._collection = collection #pymongo collection对象
+		self._collection = collection     #pymongo collection对象
 
 
 	def collection(self):
@@ -33,4 +33,15 @@ class CQuerySet(object):
 	def save(self, doc):
 		#!!!异常处理
 		self._collection.save(doc.to_mongo())
+
+	def find(self, *args, **kwargs):
+		d = {}
+		for result in self._collection.find(*args, **kwargs):
+			obj = self._doc_cls.__new__(self._doc_cls)
+			obj.from_mongo(result)
+			d[obj._id] = obj
+		return d
+
+	def update(self, id, name, value):
+		self._collection.update({"_id":id}, {name:value})
 

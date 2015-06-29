@@ -5,22 +5,43 @@ import observer
 class Document(object):
 
 	__metaclass__ = metaclasses.GetMetaClass()
-	observer = observer.IObServer()
-	#queryset = None
-	#dbname = "" #
+	#observer = observer.IObServer()
+
+	#扩展属性
+	#dbname = "test"
+	#collectionname = ""    #集合名
+	#real_time_save = False #即时存盘
+
 	def __init__(self):
 		pass
 
-	def GetID(self):
+	def getid(self):
 		return self._id
 
 
+
+	#====for dbs======
 	@classmethod
 	def getcollection(cls):
 		return cls.queryset.collection()
 
+	@classmethod
+	def savefromgas(cls, document):
+		cls.observer.save(document)
+
+	@classmethod
+	def updatefromgas(cls, id, name, value):
+		fields = cls._fields.get(name)
+		if fields is None:
+			return
+		cls.queryset.update(id, name, fields.to_mongo(value))
+
+	#====for dbs======
+
+
 	def save(self):
-		self.queryset.save(self)
+		self.__class__.observer.save(self)
+
 
 	def __setattr__(self, name, value):
 		filed = self.__class__._fields.get(name)
@@ -58,6 +79,7 @@ class Document(object):
 			self.__dict__[field_name] = filed.from_python(value)
 
 
+
 	def from_mongo(self, data):
 		'''
 		反序列化 存盘
@@ -82,4 +104,3 @@ class Document(object):
 		if needid:
 			data["_id"] = self._id
 		return data
-

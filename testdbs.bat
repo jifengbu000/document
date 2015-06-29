@@ -1,0 +1,2 @@
+python testdbs.py
+@pause
