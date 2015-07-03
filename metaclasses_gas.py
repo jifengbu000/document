@@ -19,17 +19,19 @@ class GasDocumentMetaclass(type):
 			if attr_name in FORBIDEN_FIELD_NAMES:
 				raise Exception("%s cannot be a field name"%attr_name)
 			doc_fields[attr_name] = attr_value
+			attr_value.name = attr_name
 			del attrs[attr_name]
 
 		attrs['_fields'] = doc_fields
 
-		real_time_save = attrs.pop("real_time_save", False)
-		if real_time_save:
-			attrs["observer"] = observer_gas.CObserver_Gas_RealTime()
-		else:
-			attrs["observer"] = observer_gas.CObserver_Gas_Normal()
-
 		doc_cls = super_new(cls, name, bases, attrs)
+
+		real_time_save = attrs.pop("REAL_TIME_SAVE", False)
+		if real_time_save:
+			doc_cls.observer = observer_gas.CObserver_Gas_RealTime(doc_cls)
+		else:
+			doc_cls.observer = observer_gas.CObserver_Gas_Normal(doc_cls)
+
 
 		return doc_cls
 

@@ -3,8 +3,8 @@
 bdbs = True
 bgas = False
 
-def isdbs():
+def IsDbs():
     return bdbs
 
-def isgas():
+def IsGas():
     return bgas

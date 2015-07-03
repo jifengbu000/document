@@ -13,9 +13,11 @@ class CQuerySet(object):
 
 	def create(self):
 		doc = self._doc_cls()
+		doc.create_default()
 		object_id = self._collection.insert(doc.to_mongo(False))
 		#!!!异常处理
 		doc.__dict__["_id"] = object_id
+		doc.buildparent()
 		return doc
 
 
@@ -42,6 +44,5 @@ class CQuerySet(object):
 			d[obj._id] = obj
 		return d
 
-	def update(self, id, name, value):
-		self._collection.update({"_id":id}, {name:value})
+
 

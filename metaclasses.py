@@ -11,9 +11,9 @@ def GetGasDocmentMetaclass():
 	return metaclasses_gas.GasDocumentMetaclass
 
 def GetMetaClass():
-	if game.isdbs():
+	if game.IsDbs():
 		return GetDbsDocumentMetaclass()
-	elif game.isgas():
+	elif game.IsGas():
 		return GetGasDocmentMetaclass()
 	else:
 		return type

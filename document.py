@@ -10,7 +10,7 @@ class Document(object):
 	#扩展属性
 	#dbname = "test"
 	#collectionname = ""    #集合名
-	#real_time_save = False #即时存盘
+	#REAL_TIME_SAVE = False #即时存盘
 
 	def __init__(self):
 		pass
@@ -25,22 +25,14 @@ class Document(object):
 	def getcollection(cls):
 		return cls.queryset.collection()
 
-	@classmethod
-	def savefromgas(cls, document):
-		cls.observer.save(document)
-
-	@classmethod
-	def updatefromgas(cls, id, name, value):
-		fields = cls._fields.get(name)
-		if fields is None:
-			return
-		cls.queryset.update(id, name, fields.to_mongo(value))
-
 	#====for dbs======
 
 
 	def save(self):
 		self.__class__.observer.save(self)
+
+	def childsetattr(self, namelist, value):
+		self.__class__.observer.updatechild(self._id, namelist, value)
 
 
 	def __setattr__(self, name, value):
@@ -58,8 +50,8 @@ class Document(object):
 		序列化
 		'''
 		data = {}
-		for field_name, field in self.__class__._fields.iteritems():
-			data[field_name] = field.to_python(self.__dict__.get(field_name))
+		for fields_name, fields in self.__class__._fields.iteritems():
+			data[fields_name] = fields.to_python(self.__dict__.get(fields_name))
 		data["_id"] = self._id
 		return data
 
@@ -72,11 +64,13 @@ class Document(object):
 		if not data.has_key("_id"):
 			raise Exception("%s find not _id fields"%(self.__class__, )) #先简单要求必须有_id字段
 		self.__dict__["_id"] = data.pop("_id")
-		for field_name, value in data.iteritems():
-			filed = self.__class__._fields.get(field_name)
-			if filed is None:
-				raise Exception("%s find not filed:%s"%(self.__class__, field_name))
-			self.__dict__[field_name] = filed.from_python(value)
+		for fields_name, value in data.iteritems():
+			fileds = self.__class__._fields.get(fields_name)
+			if fileds is None:
+				raise Exception("%s find not filed:%s"%(self.__class__, fields_name))
+			self.__dict__[fields_name] = fileds.from_python(value)
+
+		self.buildparent()
 
 
 
@@ -87,11 +81,13 @@ class Document(object):
 		if not data.has_key("_id"):
 			raise Exception("%s find not _id fields"%(self.__class__, )) #先简单要求必须有_id字段
 		self.__dict__["_id"] = data.pop("_id")
-		for field_name, value in data.iteritems():
-			filed = self.__class__._fields.get(field_name)
-			if filed is None:
-				raise Exception("%s find not filed:%s"%(self.__class__, field_name))
-			self.__dict__[field_name] = filed.from_mongo(value)
+		for fields_name, value in data.iteritems():
+			fields = self.__class__._fields.get(fields_name)
+			if fields is None:
+				raise Exception("%s find not filed:%s"%(self.__class__, fields_name))
+			self.__dict__[fields_name] = fields.from_mongo(value)
+
+		self.buildparent()
 
 
 	def to_mongo(self, needid=True):
@@ -99,8 +95,17 @@ class Document(object):
 		序列化 存盘的
 		'''
 		data = {}
-		for field_name, field in self.__class__._fields.iteritems():
-			data[field_name] = field.to_mongo(self.__dict__.get(field_name))
+		for fields_name, fields in self.__class__._fields.iteritems():
+			data[fields_name] = fields.to_mongo(self.__dict__.get(fields_name))
 		if needid:
 			data["_id"] = self._id
 		return data
+
+	def create_default(self):
+		for fields_name, fields in self.__class__._fields.iteritems():
+			self.__dict__[fields_name] = fields.create_default()
+
+
+	def buildparent(self):
+		for fields_name, fields in self.__class__._fields.iteritems():
+			fields.buildparent(self.__dict__.get(fields_name), self)
